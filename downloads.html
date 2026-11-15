@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Downloads – NSE Annual Report Data</title><link rel="stylesheet" href="style.css"></head><body>
+<header><div class="wrap"><b>NSE Annual Report Data</b><nav><a href="index.html">Companies</a><a href="downloads.html">Downloads</a><a href="about.html">About &amp; data quality</a></nav></div></header>
+<main class="wrap"><h1>Downloads</h1><p class="mut">Raw extracted tables, one gzip-compressed CSV per section (UTF-8). Columns: symbol, fy, section, indicator_type, pdf_page, table_no, row_no, c1…c15 (cells as printed), method.</p>
+<div class="list" id="l"></div>
+<p class="note">The full extracted running text (about 360 MB) is not hosted here because of size limits.</p></main>
+<script>
+const F=[['section_A','Section A – general disclosures'],['section_B','Section B – management and process'],['P1','Principle 1'],['P2','Principle 2'],['P3','Principle 3'],['P4','Principle 4'],['P5','Principle 5'],['P6','Principle 6 – environment'],['P7','Principle 7'],['P8','Principle 8'],['P9','Principle 9'],['unclassified','Unclassified tables'],['files_log','Per-report extraction log']];
+document.getElementById('l').innerHTML=F.map(([f,t])=>`<a class="item" href="downloads/brsr_${f}.csv.gz"><span class="n">${t}</span><span class="mut">brsr_${f}.csv.gz</span></a>`).join('');
+</script></body></html>

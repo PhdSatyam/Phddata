@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Company – NSE Annual Report Data</title><link rel="stylesheet" href="style.css"></head><body>
+<header><div class="wrap"><b>NSE Annual Report Data</b><nav><a href="index.html">Companies</a><a href="downloads.html">Downloads</a><a href="about.html">About &amp; data quality</a></nav></div></header>
+<main class="wrap"><p><a href="index.html">← All companies</a></p><h1 id="h">Loading…</h1><p class="mut" id="sub"></p>
+<div class="tabs" id="ytabs"></div><div class="tabs" id="stabs"></div><div id="out"></div></main>
+<div class="wrap"><footer>Tables are extracted automatically and may contain errors; check against the original report.</footer></div>
+<script>
+const SEC={A:'A · General disclosures',B:'B · Management & process',P1:'P1 · Ethics, transparency',P2:'P2 · Sustainable products',P3:'P3 · Employee well-being',P4:'P4 · Stakeholders',P5:'P5 · Human rights',P6:'P6 · Environment',P7:'P7 · Policy advocacy',P8:'P8 · Inclusive growth',P9:'P9 · Consumer value',unclassified:'Unclassified'};
+const ORDER=Object.keys(SEC);const q=new URLSearchParams(location.search);const s=q.get('s');let D,fy,sec;
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+fetch('data/c/'+encodeURIComponent(s)+'.json').then(r=>r.json()).then(d=>{D=d;document.title=s+' – NSE Annual Report Data';
+ $h=document.getElementById('h');$h.textContent=(d.name||s);document.getElementById('sub').textContent='NSE symbol '+s;
+ const ys=Object.keys(d.years);fy=q.get('fy')&&d.years[q.get('fy')]?q.get('fy'):ys[ys.length-1];sec=q.get('sec')||'A';draw()}).catch(()=>{document.getElementById('h').textContent='Company not found'});
+function draw(){const ys=Object.keys(D.years);
+ document.getElementById('ytabs').innerHTML=ys.map(y=>`<span class="tab ${y==fy?'on':''}" onclick="fy='${y}';draw()">${y}</span>`).join('');
+ const have=ORDER.filter(k=>D.years[fy][k]);if(!have.includes(sec))sec=have[0];
+ document.getElementById('stabs').innerHTML=have.map(k=>`<span class="tab ${k==sec?'on':''}" onclick="sec='${k}';draw()">${SEC[k]}</span>`).join('');
+ history.replaceState(null,'','?s='+encodeURIComponent(s)+'&fy='+fy+'&sec='+sec);
+ document.getElementById('out').innerHTML=(D.years[fy][sec]||[]).map(t=>`<div class="tbl"><h3><span>Table ${t.n} · PDF page ${esc(t.p)}</span>${t.i?`<span class="tag">${esc(t.i)}</span>`:''}</h3><div class="scroll"><table>${t.r.map(r=>'<tr>'+r.map(c=>`<td>${esc(c)}</td>`).join('')+'</tr>').join('')}</table></div></div>`).join('')||'<p class="mut">No tables.</p>'}
+</script></body></html>

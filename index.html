@@ -1,0 +1,22 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NSE Annual Report Data – BRSR tables</title><link rel="stylesheet" href="style.css"></head><body>
+<header><div class="wrap"><b>NSE Annual Report Data</b><nav><a href="index.html">Companies</a><a href="downloads.html">Downloads</a><a href="about.html">About &amp; data quality</a></nav></div></header>
+<main class="wrap"><h1>BRSR tables</h1>
+<p class="mut" id="sub">Loading…</p>
+<input type="search" id="q" placeholder="Search by company name or NSE symbol" autofocus>
+<div class="row"><label class="mut">Reporting year <select id="fy"><option value="">All</option></select></label><span class="mut" id="cnt"></span></div>
+<div class="list" id="list"></div>
+<p class="note">Tables are extracted automatically from the BRSR section of each annual report and can contain errors. See <a href="about.html">About &amp; data quality</a>.</p>
+</main><div class="wrap"><footer>Data derived from publicly filed annual reports of NSE-listed companies.</footer></div>
+<script>
+let all=[];const $=id=>document.getElementById(id);
+fetch('data/companies.json').then(r=>r.json()).then(d=>{all=d;
+ const ys=[...new Set(d.flatMap(x=>x.y))].sort();ys.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;$('fy').appendChild(o)});
+ $('sub').textContent=d.length.toLocaleString()+' companies, '+d.reduce((a,x)=>a+x.y.length,0).toLocaleString()+' company-year reports';render()});
+function render(){const q=$('q').value.trim().toLowerCase(),fy=$('fy').value;
+ const r=all.filter(x=>(!fy||x.y.includes(fy))&&(!q||x.s.toLowerCase().includes(q)||x.n.toLowerCase().includes(q)));
+ $('cnt').textContent=r.length.toLocaleString()+' shown';
+ $('list').innerHTML=r.slice(0,300).map(x=>`<a class="item" href="company.html?s=${encodeURIComponent(x.s)}"><span class="s">${x.s}</span><span class="n">${esc(x.n)}</span><span class="mut">${x.y.map(y=>y.slice(2,4)+'-'+y.slice(7)).join(' · ')}</span></a>`).join('')+(r.length>300?'<div class="item mut">Showing first 300 – refine the search.</div>':'')}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+$('q').oninput=render;$('fy').onchange=render;
+</script></body></html>
