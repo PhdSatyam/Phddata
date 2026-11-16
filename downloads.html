@@ -1,12 +1,12 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Downloads – NSE Annual Report Data</title><link rel="stylesheet" href="style.css"></head><body>
+<title>Downloads – NSE Annual Report Data</title><link rel="stylesheet" href="style.css?v=20261116"></head><body>
 <main class="wrap"><h1>Downloads</h1><p class="mut" style="margin-top:0">All files are gzip-compressed CSV, UTF-8. Cleaned versions: units normalised, cross-year checks applied, rows carry quality flags.</p>
 <h2>Financial statements</h2><div class="list dl" id="fin"></div>
 <p class="small mut">Money values are in ₹ crore; EPS is as printed. <code>fin_tidy</code> has one row per company, basis, fiscal year and field; the column <code>flagged_scale_outlier</code> is 1 for years that failed a plausibility check. In the wide files, <code>qc_flags</code> and <code>xyear_notes</code> list per-row checks and cross-year repairs.</p>
 <h2>BRSR tables</h2><div class="list dl" id="brsr"></div>
 <p class="small mut">Columns: symbol, fy, section, indicator_type, pdf_page, table_no, row_no, c1…c15 (cells as printed), method, <code>qc</code>. The <code>qc</code> column marks rows that were split or merged, corrected from another year's report, or that disagree with it. See <a href="about.html">About &amp; data quality</a>.</p>
 <div class="note">The full extracted running text of the reports (about 360 MB) is not hosted here because of size limits.</div></main>
-<script src="common.js"></script>
+<script src="common.js?v=20261116"></script>
 <script>CM.layout('dl');
 fetch('data/downloads.json').then(r=>r.json()).then(m=>{const mb=b=>b>=1e6?(b/1e6).toFixed(1)+' MB':Math.round(b/1e3)+' KB';
 const L=(f,t)=>`<a class="item" href="downloads/${f}"><span class="n"><b>${t}</b><br><span class="mut small">${f}</span></span><span class="mut">${m[f]?mb(m[f]):''}</span><span class="btn sm">Download</span></a>`;
