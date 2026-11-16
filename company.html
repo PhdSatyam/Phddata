@@ -1,20 +1,54 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Company – NSE Annual Report Data</title><link rel="stylesheet" href="style.css"></head><body>
-<header><div class="wrap"><b>NSE Annual Report Data</b><nav><a href="index.html">Companies</a><a href="downloads.html">Downloads</a><a href="about.html">About &amp; data quality</a></nav></div></header>
-<main class="wrap"><p><a href="index.html">← All companies</a></p><h1 id="h">Loading…</h1><p class="mut" id="sub"></p>
-<div class="tabs" id="ytabs"></div><div class="tabs" id="stabs"></div><div id="out"></div></main>
-<div class="wrap"><footer>Tables are extracted automatically and may contain errors; check against the original report.</footer></div>
+<main class="wrap"><p class="small"><a href="index.html">← All companies</a></p>
+<div style="display:flex;gap:14px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap"><div><h1 id="h">Loading…</h1><div class="mut" id="sub"></div></div><div style="display:flex;gap:8px"><button class="btn" id="addc">+ Compare</button></div></div>
+<div class="tabs" id="mt" style="margin-top:16px"></div><div id="out"></div></main>
+<script src="common.js"></script>
 <script>
+CM.layout('home');
 const SEC={A:'A · General disclosures',B:'B · Management & process',P1:'P1 · Ethics, transparency',P2:'P2 · Sustainable products',P3:'P3 · Employee well-being',P4:'P4 · Stakeholders',P5:'P5 · Human rights',P6:'P6 · Environment',P7:'P7 · Policy advocacy',P8:'P8 · Inclusive growth',P9:'P9 · Consumer value',unclassified:'Unclassified'};
-const ORDER=Object.keys(SEC);const q=new URLSearchParams(location.search);const s=q.get('s');let D,fy,sec;
-const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-fetch('data/c/'+encodeURIComponent(s)+'.json').then(r=>r.json()).then(d=>{D=d;document.title=s+' – NSE Annual Report Data';
- $h=document.getElementById('h');$h.textContent=(d.name||s);document.getElementById('sub').textContent='NSE symbol '+s;
- const ys=Object.keys(d.years);fy=q.get('fy')&&d.years[q.get('fy')]?q.get('fy'):ys[ys.length-1];sec=q.get('sec')||'A';draw()}).catch(()=>{document.getElementById('h').textContent='Company not found'});
-function draw(){const ys=Object.keys(D.years);
- document.getElementById('ytabs').innerHTML=ys.map(y=>`<span class="tab ${y==fy?'on':''}" onclick="fy='${y}';draw()">${y}</span>`).join('');
- const have=ORDER.filter(k=>D.years[fy][k]);if(!have.includes(sec))sec=have[0];
- document.getElementById('stabs').innerHTML=have.map(k=>`<span class="tab ${k==sec?'on':''}" onclick="sec='${k}';draw()">${SEC[k]}</span>`).join('');
- history.replaceState(null,'','?s='+encodeURIComponent(s)+'&fy='+fy+'&sec='+sec);
- document.getElementById('out').innerHTML=(D.years[fy][sec]||[]).map(t=>`<div class="tbl"><h3><span>Table ${t.n} · PDF page ${esc(t.p)}</span>${t.i?`<span class="tag">${esc(t.i)}</span>`:''}</h3><div class="scroll"><table>${t.r.map(r=>'<tr>'+r.map(c=>`<td>${esc(c)}</td>`).join('')+'</tr>').join('')}</table></div></div>`).join('')||'<p class="mut">No tables.</p>'}
+const ORDER=Object.keys(SEC);const Q=new URLSearchParams(location.search);const S=Q.get('s');const $=id=>document.getElementById(id);
+let FIN=null,BR=null,tab=Q.get('tab'),basis=Q.get('basis')||'',fy=Q.get('fy'),sec=Q.get('sec')||'A',showFlag=false,name=S,kind='core';
+const get=u=>fetch(u).then(r=>r.ok?r.json():null).catch(()=>null);
+Promise.all([get('data/f/'+encodeURIComponent(S)+'.json'),get('data/c/'+encodeURIComponent(S)+'.json')]).then(([f,b])=>{FIN=f;BR=b;
+ if(!f&&!b){$('h').textContent='Company not found';return}
+ name=(f&&f.name)||(b&&b.name)||S; kind=f?f.kind:'core'; document.title=name+' – NSE Annual Report Data';
+ $('h').textContent=name;$('sub').innerHTML='NSE symbol <b>'+CM.esc(S)+'</b> '+(kind!=='core'?`<span class="badge ${kind}">${CM.KIND[kind]}</span>`:'');
+ if(!tab)tab=f?'fin':'brsr'; if(!basis&&f)basis=f.b.consolidated&&hasData(f.b.consolidated)?'consolidated':'standalone';
+ const ys=b?Object.keys(b.years):[];if(!fy||!(b&&b.years[fy]))fy=ys[ys.length-1];
+ const bt=$('addc');const upd=()=>bt.textContent=CM.getCmp().includes(S)?'✓ In comparison':'+ Compare';upd();bt.onclick=()=>{let c=CM.getCmp();c=c.includes(S)?c.filter(z=>z!==S):c.length<12?[...c,S]:c;CM.setCmp(c);upd()};
+ draw()});
+function hasData(B){return B&&B.k&&Object.values(B.k).some(a=>a.some(v=>v!=null))}
+function draw(){const t=[];if(FIN)t.push(['fin','Financials']);if(BR)t.push(['brsr','BRSR tables']);
+ $('mt').innerHTML=t.map(([k,l])=>`<span class="tab ${tab===k?'on':''}" onclick="tab='${k}';draw()">${l}</span>`).join('');
+ history.replaceState(null,'','?s='+encodeURIComponent(S)+'&tab='+tab+(tab==='fin'?'&basis='+basis:'&fy='+fy+'&sec='+sec));
+ tab==='fin'?drawFin():drawBr()}
+function lab(f){return f.replace(/_/g,' ').replace(/^./,c=>c.toUpperCase())}
+function drawFin(){const d=FIN,B=d.b[basis]||d.b[Object.keys(d.b)[0]],yrs=d.years;const hide=!showFlag;
+ const yv=yrs.map((y,i)=>i).filter(i=>Object.values(B.x).some(a=>a[i]!=null)||Object.values(B.k).some(a=>a[i]!=null));
+ const ylab=yv.map(i=>yrs[i]);const flagged=y=>B.o.includes(y);
+ const cell=(a,i,u)=>{const v=a?a[i]:null;if(v==null)return '<td class="na">–</td>';const f=flagged(yrs[i]);if(f&&hide)return '<td class="na" title="Hidden: failed a plausibility check">⚑</td>';return `<td class="${f?'flag':''}" ${f?'title="Flagged: may be mis-scaled or mis-extracted"':''}>${CM.fmt(v,u)}</td>`};
+ const K=B.k;const lastIdx=[...yv].reverse().find(i=>!flagged(yrs[i])&&(K.assets&&K.assets[i]!=null||K.revenue&&K.revenue[i]!=null));
+ const kp=[['revenue','Revenue'],['profit','Net profit'],['assets','Total assets'],['equity','Total equity']].filter(([m])=>K[m]&&lastIdx!=null&&K[m][lastIdx]!=null).map(([m,l])=>`<div class="kpi"><span>${l} · ${CM.fyLabel(yrs[lastIdx])}</span><b>${CM.fmt(K[m][lastIdx],'₹ crore')}</b><small> ₹ crore</small></div>`).join('');
+ const bs=Object.keys(d.b);
+ let h=`<div class="ctl" style="margin-bottom:8px"><div class="seg">${bs.map(b=>`<span class="${b===basis?'on':''}" onclick="basis='${b}';draw()">${b[0].toUpperCase()+b.slice(1)}</span>`).join('')}</div><label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:500"><input type="checkbox" ${showFlag?'checked':''} onchange="showFlag=this.checked;draw()"> Show flagged values (${B.o.length} year${B.o.length===1?'':'s'} flagged)</label><button class="btn" onclick="dl()">Download CSV</button> <a class="btn pri" href="compare.html?c=${encodeURIComponent(S)}">Compare with others →</a></div>`;
+ h+=`<div class="kpis">${kp||'<div class="note">No headline figures available for this company.</div>'}</div>`;
+ if(B.o.length)h+=`<div class="note">${B.o.length} year(s) (${B.o.map(CM.fyLabel).join(', ')}) failed plausibility checks (a sudden jump in scale or an implausible ratio) and are ${hide?'hidden':'shown in red'}. Money values are in ₹ crore; EPS is as printed.</div>`;
+ h+=`<div class="grid2"><div class="card"><b class="small">Revenue and net profit (₹ crore)</b><div class="chart" id="c1" style="height:260px"></div></div><div class="card"><b class="small">Total assets and equity (₹ crore)</b><div class="chart" id="c2" style="height:260px"></div></div></div>`;
+ const rows=[...CM.KEYM.filter(m=>K[m[0]]).map(m=>[m[1]+' ('+m[2]+')',K[m[0]],m[2]])];
+ h+=`<h2>Key metrics</h2><div class="tbl"><div class="scroll"><table class="fin"><tr><th>Metric</th>${ylab.map(y=>`<th>${CM.fyLabel(y)}</th>`).join('')}</tr>${rows.map(([l,a,u])=>`<tr><td>${CM.esc(l)}</td>${yv.map(i=>cell(a,i,u)).join('')}</tr>`).join('')}${['margin','roa','roe'].map(m=>{const s=CM.series(d,m,basis,hide);const r=CM.RATIOS.find(x=>x[0]===m);return `<tr><td>${r[1]} (%)</td>${yv.map(i=>`<td class="${s.byYear[yrs[i]]==null?'na':''}">${CM.fmt(s.byYear[yrs[i]],'%')}</td>`).join('')}</tr>`}).join('')}</table></div></div>`;
+ const fl=Object.keys(B.x).sort();
+ h+=`<details class="fields"><summary>All reported fields (${fl.length})</summary><div class="tbl"><div class="scroll"><table class="fin"><tr><th>Field</th>${ylab.map(y=>`<th>${CM.fyLabel(y)}</th>`).join('')}</tr>${fl.map(f=>`<tr><td>${CM.esc(lab(f))}</td>${yv.map(i=>cell(B.x[f],i,f.startsWith('eps')?'₹ / share':'₹ crore')).join('')}</tr>`).join('')}</table></div></div></details>`;
+ if(B.cal.length)h+=`<p class="small mut">Calendar-year reporter in ${B.cal.map(CM.fyLabel).join(', ')}: the period is January–December, shown under the fiscal-year label that ends in that year.</p>`;
+ $('out').innerHTML=h;
+ const lab2=ylab.map(CM.fyLabel);const sv=(m)=>{const s=CM.series(d,m,basis,hide);return ylab.map(y=>s.byYear[y]==null?null:s.byYear[y])};
+ CM.lineChart($('c1'),lab2,[{name:'Revenue',color:CM.COLORS[0],vals:sv('revenue')},{name:'Net profit',color:CM.COLORS[1],vals:sv('profit')}],'₹ crore');
+ CM.lineChart($('c2'),lab2,[{name:'Total assets',color:CM.COLORS[3],vals:sv('assets')},{name:'Total equity',color:CM.COLORS[2],vals:sv('equity')}],'₹ crore');}
+function dl(){const B=FIN.b[basis],y=FIN.years;const f=Object.keys(B.x).sort();const rows=[['field',...y.map(CM.fyLabel)],...f.map(k=>[k,...y.map((_,i)=>B.x[k][i])]),['flagged_years',...B.o.map(CM.fyLabel)]];CM.download(S+'_'+basis+'_financials.csv',CM.toCSV(rows))}
+function drawBr(){const d=BR,ys=Object.keys(d.years);
+ const have=ORDER.filter(k=>d.years[fy][k]);if(!have.includes(sec))sec=have[0];
+ let h=`<div class="tabs">${ys.map(y=>`<span class="tab ${y==fy?'on':''}" onclick="fy='${y}';draw()">${y}</span>`).join('')}</div><div class="tabs">${have.map(k=>`<span class="tab ${k==sec?'on':''}" onclick="sec='${k}';draw()">${SEC[k]}</span>`).join('')}</div>`;
+ h+=`<div class="legend"><span><i style="background:var(--grn)"></i>value corrected using another year's report</span><span><i style="background:var(--red)"></i>differs from the next report's prior-year column</span><span><i style="background:var(--amb)"></i>row split or merge not verified</span></div>`;
+ h+=(d.years[fy][sec]||[]).map(t=>`<div class="tbl"><h3><span>Table ${CM.esc(t.n)} · PDF page ${CM.esc(t.p)}</span>${t.i?`<span class="tag">${CM.esc(t.i)}</span>`:''}</h3><div class="scroll"><table>${t.r.map((r,i)=>{const q=t.q&&t.q[i]||'';const c=q.includes('u')?'u':q.includes('d')?'d':q.includes('c')?'c':'';return `<tr class="${c?'q-'+c:''}">`+r.map(c=>`<td>${CM.esc(c)}</td>`).join('')+'</tr>'}).join('')}</table></div></div>`).join('');
+ $('out').innerHTML=h}
 </script></body></html>

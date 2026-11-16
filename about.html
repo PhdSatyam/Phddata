@@ -1,17 +1,29 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>About – NSE Annual Report Data</title><link rel="stylesheet" href="style.css"></head><body>
-<header><div class="wrap"><b>NSE Annual Report Data</b><nav><a href="index.html">Companies</a><a href="downloads.html">Downloads</a><a href="about.html">About &amp; data quality</a></nav></div></header>
-<main class="wrap" style="max-width:760px"><h1>About and data quality</h1>
-<h3>What this is</h3><p>Tables from the Business Responsibility and Sustainability Report (BRSR) section of annual reports of NSE-listed companies, for reporting years 2022-23 to 2025-26. The source documents are the annual reports the companies filed publicly.</p>
-<h3>How it was made</h3><p>Each report PDF was searched for its BRSR pages, and tables were extracted automatically and sorted into Section A, Section B and Principles 1–9. Cells are kept as printed, so units and number formats vary between companies.</p>
-<h3>Known limitations</h3><ul>
-<li>Extraction is automatic. Rows can be split, merged, shifted or missing, especially for tables that span pages or use unusual layouts. Check anything important against the original report.</li>
-<li>In some reports, especially those printed as two-page spreads or with side-by-side columns, text from neighbouring columns or pages is mixed into the same cells, so a table can be hard to read. The raw tables are best treated as a starting point for finding the right page, not as clean data.</li>
-<li>Some tables could not be assigned to a section and are listed as "Unclassified".</li>
-<li>A few reports are missing or could not be read in full (seven were not available, and some files were truncated at source).</li>
-<li>Company names come from Section A where it could be read; otherwise only the NSE symbol is shown.</li>
-<li>Some reports carry year labels such as 2022-2022 or 2024-2026 because of how the source files were named. They are kept as in the source.</li>
-<li>Financial statement data is not on this site yet.</li>
-</ul>
-<h3>Licence</h3><p>The extracted data is released under CC BY 4.0 and the site code under MIT. The underlying reports remain the property of the companies that published them. No warranty is given for accuracy.</p>
-</main></body></html>
+<title>About &amp; data quality – NSE Annual Report Data</title><link rel="stylesheet" href="style.css"></head><body>
+<main class="wrap" style="max-width:860px"><h1>About &amp; data quality</h1>
+<p class="lead mut" style="font-size:16px">This is a research dataset built automatically from public annual reports of NSE-listed companies. It is useful for exploration and for finding the right page of a report. It is <b>not</b> audited data. Read this page before relying on any number.</p>
+<h2>What is here</h2>
+<div class="kpis"><div class="kpi"><span>Companies</span><b>1,270</b><small> with financials</small></div><div class="kpi"><span>BRSR reports</span><b>4,176</b><small> company-years, 1,234 companies</small></div><div class="kpi"><span>All four BRSR cycles</span><b>790</b><small> companies</small></div><div class="kpi"><span>Full history</span><b>422</b><small> with all 4 BRSR cycles and every year FY2010-11 to FY2025-26</small></div></div>
+<h2>How it was made</h2>
+<p><b>Financial statements.</b> The balance sheet, profit and loss and cash-flow pages of each report were located, read line by line and mapped to standard fields. Each statement's printed unit (rupees, thousand, lakh, million, crore) was detected and every amount converted to <b>₹ crore</b>; earnings per share is kept as printed. Where an adjacent year's report shows the same figure as its prior-year column, it was used to fill gaps and to correct scale errors.</p>
+<p><b>BRSR tables.</b> Pages of the Business Responsibility and Sustainability Report were found in each report and tables extracted and sorted into Section A, Section B and Principles 1–9. Cells are kept as printed, so units and formats vary by company. Text artefacts (ligatures, broken digits) were repaired, and cells that merged several rows were split where the pattern was clear.</p>
+<h2>How accurate is it?</h2>
+<div class="card">
+<h3 style="margin-top:0">Financial statements, checked against the PDF pages</h3>
+<p>For a random sample, each key value (total assets, revenue, profit, equity, cash flow from operations) was looked up on its statement page after converting back to the printed unit.</p>
+<table><tr><th style="text-align:left">File</th><th>Values checked</th><th>Found on the page</th></tr><tr><td>Core statements (all companies)</td><td style="text-align:right">3,401</td><td style="text-align:right"><b>96.7%</b></td></tr><tr><td>NBFCs</td><td style="text-align:right">1,272</td><td style="text-align:right"><b>94.8%</b></td></tr><tr><td>Banks</td><td style="text-align:right">940</td><td style="text-align:right"><b>83.5%</b></td></tr><tr><td>Insurers</td><td colspan="2" style="text-align:right">not checked</td></tr></table>
+<p class="small mut">A match shows the number was read correctly. It cannot show that the <i>unit</i> was right; a wrong unit gives a consistent but mis-scaled series.</p></div>
+<div class="card"><h3 style="margin-top:0">Plausibility flags</h3>
+<p>Years are flagged when assets or revenue jump out of line with neighbouring years, or when profit, revenue and assets do not fit together. About <b>7%</b> of company-years are flagged (more for banks, whose statements are often printed in thousands). Flagged years are hidden by default and shown in red when you ask to see them. Values that pass these checks can still be wrong.</p></div>
+<div class="card"><h3 style="margin-top:0">BRSR cross-year check</h3>
+<p>Each report's figures were compared with the prior-year column of the next year's report: <b>114,760</b> comparable numeric cells, of which <b>90.6%</b> agree. Disagreements are usually restatements or table misalignment and are marked in red in the BRSR view rather than overwritten. Empty cells were filled from a later report where the value could be confirmed on the original page. Principle 6 (environment) was checked in full against the PDFs; other sections were sampled.</p></div>
+<h2>Known limitations</h2><ul>
+<li><b>Banks, older years:</b> early-year bank statements are the least reliable. Several are flagged or missing. Use bank figures before FY2018 with particular care.</li>
+<li><b>Repaired values:</b> a small share of financial values were filled or replaced from the next year's report and cannot be verified from their own report. They are listed in the <code>xyear_notes</code> column of the downloads.</li>
+<li><b>Fiscal years:</b> a year is labelled by the fiscal year it ends in (FY2021-22 ends March 2022). Calendar-year reporters are shown under the year in which they end and noted on the company page.</li>
+<li><b>Coverage:</b> about 305 scanned reports could not be read (they need OCR) and 17 files are stubs. Companies that listed after 2011 have shorter histories. 432 reports had no BRSR section found.</li>
+<li><b>Hindi and Marathi text</b> in some BRSR tables comes out garbled because of legacy fonts.</li>
+<li><b>BRSR tables</b> can still contain split, merged, shifted or missing rows, and text from neighbouring columns. Rows with a coloured edge were corrected, disagree with another year, or have an unverified split.</li>
+<li><b>Names:</b> company names come from BRSR Section A where readable; otherwise only the NSE symbol is shown.</li></ul>
+<h2>Licence</h2><p>Data: CC BY 4.0. Code: MIT. The underlying reports remain the property of the companies that published them. No warranty is given for accuracy. Corrections and suggestions are welcome through GitHub issues.</p>
+</main><script src="common.js"></script><script>CM.layout('about')</script></body></html>

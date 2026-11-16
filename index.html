@@ -1,22 +1,37 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NSE Annual Report Data – BRSR tables</title><link rel="stylesheet" href="style.css"></head><body>
-<header><div class="wrap"><b>NSE Annual Report Data</b><nav><a href="index.html">Companies</a><a href="downloads.html">Downloads</a><a href="about.html">About &amp; data quality</a></nav></div></header>
-<main class="wrap"><h1>BRSR tables</h1>
-<p class="mut" id="sub">Loading…</p>
-<input type="search" id="q" placeholder="Search by company name or NSE symbol" autofocus>
-<div class="row"><label class="mut">Reporting year <select id="fy"><option value="">All</option></select></label><span class="mut" id="cnt"></span></div>
+<title>NSE Annual Report Data – financials and BRSR for listed Indian companies</title>
+<meta name="description" content="Open dataset of financial statements (FY2009-10 onwards) and BRSR sustainability tables (FY2022-23 to FY2025-26) extracted from annual reports of NSE-listed companies.">
+<link rel="stylesheet" href="style.css"></head><body>
+<main class="wrap">
+<section class="hero"><h1>Annual-report data for NSE-listed companies</h1>
+<p class="lead">Financial statements from FY2009-10 and the Business Responsibility and Sustainability Report (BRSR) tables for FY2022-23 to FY2025-26, extracted from public annual reports. Search a company, or <a href="compare.html">compare several companies over several years</a>.</p>
+<div class="stats" id="stats"><div class="stat"><b>–</b><span>companies</span></div><div class="stat"><b>–</b><span>with financial data</span></div><div class="stat"><b>–</b><span>with BRSR tables</span></div><div class="stat"><b>–</b><span>with all four BRSR cycles</span></div></div>
+<div class="search"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg><input type="search" id="q" placeholder="Search by company name or NSE symbol" autofocus aria-label="Search companies"></div>
+<div class="filters" id="filters"></div></section>
+<div class="small mut" id="cnt" style="margin:6px 2px"></div>
 <div class="list" id="list"></div>
-<p class="note">Tables are extracted automatically from the BRSR section of each annual report and can contain errors. See <a href="about.html">About &amp; data quality</a>.</p>
-</main><div class="wrap"><footer>Data derived from publicly filed annual reports of NSE-listed companies.</footer></div>
+<p class="small mut" id="more"></p>
+<div class="note info">Financial values are shown in ₹ crore. Values that fail plausibility checks are flagged and hidden by default. See <a href="about.html">About &amp; data quality</a> before relying on any number.</div>
+</main>
+<script src="common.js"></script>
 <script>
-let all=[];const $=id=>document.getElementById(id);
+CM.layout('home');
+const $=id=>document.getElementById(id);let all=[];const F={k:'',has:''};const CYC=['2022-2023','2023-2024','2024-2025','2025-2026'];
+const KO=[['','All'],['core','Non-financial'],['bank','Banks'],['nbfc','NBFCs'],['insurer','Insurers']],HO=[['','Any data'],['fin','Financials'],['brsr','BRSR'],['both','Both'],['brsr4','All 4 BRSR cycles']];
+function pills(){ $('filters').innerHTML=KO.map(([k,l])=>`<span class="pill ${F.k===k?'on':''}" data-k="${k}">${l}</span>`).join('')+'<span class="mut" style="margin:0 6px">|</span>'+HO.map(([k,l])=>`<span class="pill ${F.has===k?'on':''}" data-h="${k}">${l}</span>`).join('');
+ document.querySelectorAll('[data-k]').forEach(e=>e.onclick=()=>{F.k=e.dataset.k;pills();render()});document.querySelectorAll('[data-h]').forEach(e=>e.onclick=()=>{F.has=e.dataset.h;pills();render()});}
+const nb=x=>CYC.filter(c=>(x.y||[]).includes(c)).length;
 fetch('data/companies.json').then(r=>r.json()).then(d=>{all=d;
- const ys=[...new Set(d.flatMap(x=>x.y))].sort();ys.forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;$('fy').appendChild(o)});
- $('sub').textContent=d.length.toLocaleString()+' companies, '+d.reduce((a,x)=>a+x.y.length,0).toLocaleString()+' company-year reports';render()});
-function render(){const q=$('q').value.trim().toLowerCase(),fy=$('fy').value;
- const r=all.filter(x=>(!fy||x.y.includes(fy))&&(!q||x.s.toLowerCase().includes(q)||x.n.toLowerCase().includes(q)));
- $('cnt').textContent=r.length.toLocaleString()+' shown';
- $('list').innerHTML=r.slice(0,300).map(x=>`<a class="item" href="company.html?s=${encodeURIComponent(x.s)}"><span class="s">${x.s}</span><span class="n">${esc(x.n)}</span><span class="mut">${x.y.map(y=>y.slice(2,4)+'-'+y.slice(7)).join(' · ')}</span></a>`).join('')+(r.length>300?'<div class="item mut">Showing first 300 – refine the search.</div>':'')}
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-$('q').oninput=render;$('fy').onchange=render;
+ const st=$('stats').children;st[0].firstChild.textContent=d.length.toLocaleString();st[1].firstChild.textContent=d.filter(x=>x.f).length.toLocaleString();st[2].firstChild.textContent=d.filter(x=>x.y).length.toLocaleString();st[3].firstChild.textContent=d.filter(x=>nb(x)===4).length.toLocaleString();
+ pills();render()}).catch(()=>{$('cnt').textContent='Could not load the company index.'});
+function render(){const q=$('q').value.trim().toLowerCase(),cmp=CM.getCmp();
+ const r=all.filter(x=>(!F.k||x.k===F.k)&&(F.has===''||(F.has==='fin'&&x.f)||(F.has==='brsr'&&x.y)||(F.has==='both'&&x.f&&x.y)||(F.has==='brsr4'&&nb(x)===4))&&(!q||x.s.toLowerCase().includes(q)||x.n.toLowerCase().includes(q)));
+ r.sort((a,b)=>{const qa=q&&a.s.toLowerCase()===q?0:1,qb=q&&b.s.toLowerCase()===q?0:1;return qa-qb||a.s.localeCompare(b.s)});
+ $('cnt').textContent=r.length.toLocaleString()+' companies';
+ $('list').innerHTML=r.slice(0,200).map(x=>{const f=x.f?`<span class="fbar" title="${CM.fyLabel(x.f[0])} to ${CM.fyLabel(x.f[1])}"><i style="left:${(x.f[0]-2009)/17*100}%;right:${(2026-x.f[1])/17*100}%"></i></span><span>${x.f[2]} yrs</span>`:'<span>no financials</span>';
+  const p=CYC.map(c=>`<i class="${(x.y||[]).includes(c)?'on':''}" title="BRSR ${c}"></i>`).join('');const on=cmp.includes(x.s);
+  return `<a class="item" href="company.html?s=${encodeURIComponent(x.s)}"><span class="s">${CM.esc(x.s)}</span><span class="n">${CM.esc(x.n)} ${x.k!=='core'?`<span class="badge ${x.k}">${CM.KIND[x.k]}</span>`:''}</span><span class="cov">${f}<span class="pips" aria-label="BRSR cycles">${p}</span></span><button class="btn sm" data-c="${CM.esc(x.s)}">${on?'✓ Added':'+ Compare'}</button></a>`}).join('');
+ $('more').textContent=r.length>200?'Showing the first 200. Refine the search to see more.':'';
+ document.querySelectorAll('[data-c]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();let c=CM.getCmp();const s=b.dataset.c;if(c.includes(s))c=c.filter(z=>z!==s);else if(c.length<12)c.push(s);else alert('You can compare up to 12 companies.');CM.setCmp(c);b.textContent=c.includes(s)?'✓ Added':'+ Compare'})}
+$('q').oninput=render;
 </script></body></html>

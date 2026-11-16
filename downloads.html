@@ -1,10 +1,15 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Downloads – NSE Annual Report Data</title><link rel="stylesheet" href="style.css"></head><body>
-<header><div class="wrap"><b>NSE Annual Report Data</b><nav><a href="index.html">Companies</a><a href="downloads.html">Downloads</a><a href="about.html">About &amp; data quality</a></nav></div></header>
-<main class="wrap"><h1>Downloads</h1><p class="mut">Raw extracted tables, one gzip-compressed CSV per section (UTF-8). Columns: symbol, fy, section, indicator_type, pdf_page, table_no, row_no, c1…c15 (cells as printed), method.</p>
-<div class="list" id="l"></div>
-<p class="note">The full extracted running text (about 360 MB) is not hosted here because of size limits.</p></main>
-<script>
-const F=[['section_A','Section A – general disclosures'],['section_B','Section B – management and process'],['P1','Principle 1'],['P2','Principle 2'],['P3','Principle 3'],['P4','Principle 4'],['P5','Principle 5'],['P6','Principle 6 – environment'],['P7','Principle 7'],['P8','Principle 8'],['P9','Principle 9'],['unclassified','Unclassified tables'],['files_log','Per-report extraction log']];
-document.getElementById('l').innerHTML=F.map(([f,t])=>`<a class="item" href="downloads/brsr_${f}.csv.gz"><span class="n">${t}</span><span class="mut">brsr_${f}.csv.gz</span></a>`).join('');
+<main class="wrap"><h1>Downloads</h1><p class="mut" style="margin-top:0">All files are gzip-compressed CSV, UTF-8. Cleaned versions: units normalised, cross-year checks applied, rows carry quality flags.</p>
+<h2>Financial statements</h2><div class="list dl" id="fin"></div>
+<p class="small mut">Money values are in ₹ crore; EPS is as printed. <code>fin_tidy</code> has one row per company, basis, fiscal year and field; the column <code>flagged_scale_outlier</code> is 1 for years that failed a plausibility check. In the wide files, <code>qc_flags</code> and <code>xyear_notes</code> list per-row checks and cross-year repairs.</p>
+<h2>BRSR tables</h2><div class="list dl" id="brsr"></div>
+<p class="small mut">Columns: symbol, fy, section, indicator_type, pdf_page, table_no, row_no, c1…c15 (cells as printed), method, <code>qc</code>. The <code>qc</code> column marks rows that were split or merged, corrected from another year's report, or that disagree with it. See <a href="about.html">About &amp; data quality</a>.</p>
+<div class="note">The full extracted running text of the reports (about 360 MB) is not hosted here because of size limits.</div></main>
+<script src="common.js"></script>
+<script>CM.layout('dl');
+fetch('data/downloads.json').then(r=>r.json()).then(m=>{const mb=b=>b>=1e6?(b/1e6).toFixed(1)+' MB':Math.round(b/1e3)+' KB';
+const L=(f,t)=>`<a class="item" href="downloads/${f}"><span class="n"><b>${t}</b><br><span class="mut small">${f}</span></span><span class="mut">${m[f]?mb(m[f]):''}</span><span class="btn sm">Download</span></a>`;
+document.getElementById('fin').innerHTML=[['fin_tidy.csv.gz','Tidy panel: all companies, all fields, all years'],['fin_core_wide.csv.gz','Core statements, wide (all 1,270 companies)'],['fin_bank_wide.csv.gz','Banks – sector fields'],['fin_nbfc_wide.csv.gz','NBFCs – sector fields'],['fin_insurer_wide.csv.gz','Insurers – sector fields']].map(a=>L(...a)).join('');
+document.getElementById('brsr').innerHTML=[['section_A','Section A – general disclosures'],['section_B','Section B – management and process'],['P1','Principle 1 – ethics, transparency'],['P2','Principle 2 – sustainable products'],['P3','Principle 3 – employee well-being'],['P4','Principle 4 – stakeholders'],['P5','Principle 5 – human rights'],['P6','Principle 6 – environment'],['P7','Principle 7 – policy advocacy'],['P8','Principle 8 – inclusive growth'],['P9','Principle 9 – consumer value'],['unclassified','Unclassified tables']].map(([k,t])=>L(`brsr_${k}.csv.gz`,t)).join('')+L('brsr_crossyear_agreement.csv','Cross-year agreement by section (CSV)');});
 </script></body></html>

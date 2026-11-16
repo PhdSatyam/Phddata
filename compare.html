@@ -1,0 +1,67 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Compare companies – NSE Annual Report Data</title><link rel="stylesheet" href="style.css"></head><body>
+<main class="wrap"><h1>Compare companies over time</h1>
+<p class="mut" style="margin-top:0">Pick up to 12 companies, a metric and a range of years. The same view works for revenue, profit, balance-sheet items, cash flow, ratios or any reported field.</p>
+<div class="card"><div class="search" style="max-width:520px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="M14 14l4 4"/></svg><input type="search" id="q" placeholder="Add a company: name or NSE symbol" autocomplete="off"><div class="suggest" id="sg" hidden></div></div>
+<div class="chips" id="chips"></div>
+<div class="small mut" id="ex"></div>
+<div class="ctl" style="margin-top:14px">
+<label>Metric<select id="metric"></select></label>
+<label>Basis<select id="basis"><option value="auto">Consolidated if available</option><option value="standalone">Standalone</option><option value="consolidated">Consolidated only</option></select></label>
+<label>From<select id="y0"></select></label><label>To<select id="y1"></select></label>
+<label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:500;padding-bottom:9px"><input type="checkbox" id="hide" checked> Hide flagged years</label>
+</div></div>
+<div id="msg"></div>
+<div class="card" id="cc" hidden><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><b id="ct"></b><span><button class="btn sm" id="csvw">Download CSV (wide)</button> <button class="btn sm" id="csvl">Download CSV (long)</button> <button class="btn sm" id="lnk">Copy link</button></span></div><div class="chart" id="chart"></div></div>
+<div class="tbl" id="tw" hidden><div class="scroll"><table class="fin" id="tab"></table></div></div>
+<div class="note info small" id="foot" hidden></div>
+</main>
+<script src="common.js"></script>
+<script>
+CM.layout('compare');
+const $=id=>document.getElementById(id);const Q=new URLSearchParams(location.search);
+let IDX=[],sel=[],data={},metric=Q.get('m')||'revenue',basis=Q.get('b')||'auto',y0=+(Q.get('y0')||2011),y1=+(Q.get('y1')||2026),hide=Q.get('f')!=='1';
+const get=u=>fetch(u).then(r=>r.ok?r.json():null).catch(()=>null);
+function yearsOpts(){const o=[];for(let y=2010;y<=2026;y++)o.push(`<option value="${y}">${CM.fyLabel(y)}</option>`);$('y0').innerHTML=o.join('');$('y1').innerHTML=o.join('');$('y0').value=y0;$('y1').value=y1}
+function metricOpts(extra){const g=(t,a)=>`<optgroup label="${t}">${a.map(m=>`<option value="${m[0]}">${CM.esc(m[1])} (${m[2]})</option>`).join('')}</optgroup>`;
+ let h=g('Key metrics',CM.KEYM)+g('Ratios',CM.RATIOS);
+ if(extra&&extra.length)h+=`<optgroup label="All reported fields">${extra.map(f=>`<option value="f:${f}">${CM.esc(f.replace(/_/g,' '))}</option>`).join('')}</optgroup>`;
+ $('metric').innerHTML=h;$('metric').value=[...$('metric').options].some(o=>o.value===metric)?metric:'revenue';metric=$('metric').value}
+fetch('data/companies.json').then(r=>r.json()).then(d=>{IDX=d.filter(x=>x.f);yearsOpts();metricOpts();$('basis').value=basis;$('hide').checked=hide;
+ const c=Q.get('c');sel=(c?c.split(','):CM.getCmp()).map(decodeURIComponent).filter(s=>IDX.some(x=>x.s===s)).slice(0,12);examples();load()});
+function examples(){const ex=[['Private banks',['HDFCBANK','ICICIBANK','AXISBANK','KOTAKBANK']],['IT services',['TCS','INFY','WIPRO','HCLTECH']],['Cement',['ULTRACEMCO','AMBUJACEM','ACC','SHREECEM']],['Autos',['MARUTI','M&M','BAJAJ-AUTO','EICHERMOT']]].filter(e=>e[1].every(s=>IDX.some(x=>x.s===s)));
+ $('ex').innerHTML='Try: '+ex.map((e,i)=>`<a href="#" data-e="${i}">${e[0]}</a>`).join(' · ');document.querySelectorAll('[data-e]').forEach(a=>a.onclick=ev=>{ev.preventDefault();sel=ex[+a.dataset.e][1].slice();load()})}
+function load(){CM.setCmp(sel);Promise.all(sel.filter(s=>!data[s]).map(s=>get('data/f/'+encodeURIComponent(s)+'.json').then(d=>data[s]=d))).then(()=>{
+ const f=new Set();sel.forEach(s=>data[s]&&Object.values(data[s].b).forEach(b=>Object.keys(b.x).forEach(k=>f.add(k))));const cur=metric;metricOpts([...f].sort());if([...$('metric').options].some(o=>o.value===cur)){$('metric').value=cur;metric=cur}draw()})}
+function draw(){
+ $('chips').innerHTML=sel.map((s,i)=>`<span class="chip"><i style="background:${CM.COLORS[i%12]}"></i>${CM.esc(s)}<button data-r="${i}" aria-label="Remove ${CM.esc(s)}">×</button></span>`).join('')+(sel.length?'<button class="btn sm" id="clr">Clear all</button>':'');
+ document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{sel.splice(+b.dataset.r,1);load()});if($('clr'))$('clr').onclick=()=>{sel=[];load()};
+ const show=!!sel.length;['cc','tw','foot'].forEach(i=>$(i).hidden=!show);
+ $('msg').innerHTML=show?'':'<div class="note info">Add one or more companies to start. Use the search box above, or one of the examples.</div>';
+ if(!show){history.replaceState(null,'','compare.html');return}
+ const isF=metric.startsWith('f:'),m=isF?metric.slice(2):metric;const info=CM.KEYM.concat(CM.RATIOS).find(x=>x[0]===m);const unit=isF?(m.startsWith('eps')?'₹ / share':'₹ crore'):info[2];const mlabel=isF?m.replace(/_/g,' '):info[1];
+ const yrs=[];for(let y=Math.min(y0,y1);y<=Math.max(y0,y1);y++)yrs.push(y);
+ const rows=sel.map((s,i)=>{const d=data[s];if(!d)return{s,i,none:true};const r=CM.series(d,m,basis,hide,isF);return{s,i,r,d}});
+ $('ct').textContent=mlabel+' · '+unit;
+ CM.lineChart($('chart'),yrs.map(CM.fyLabel),rows.map(r=>({name:r.s+(r.r&&r.r.basis?' ('+r.r.basis.slice(0,5)+'.)':''),color:CM.COLORS[r.i%12],vals:yrs.map(y=>r.r&&r.r.byYear[y]!=null?r.r.byYear[y]:null)})),unit);
+ let h=`<tr><th>Company</th><th>Basis</th>${yrs.map(y=>`<th>${CM.fyLabel(y)}</th>`).join('')}</tr>`;
+ h+=rows.map(r=>`<tr><td><span class="chip" style="border:0;padding:0;background:none"><i style="background:${CM.COLORS[r.i%12]}"></i></span> <a href="company.html?s=${encodeURIComponent(r.s)}"><b>${CM.esc(r.s)}</b></a> <span class="mut small">${CM.esc((IDX.find(x=>x.s===r.s)||{}).n||'')}</span></td><td class="mut" style="text-align:left">${r.r&&r.r.basis||'–'}</td>${yrs.map(y=>{const v=r.r&&r.r.byYear[y];const fl=r.r&&r.r.flagged.has(y);return v==null?'<td class="na">–</td>':`<td class="${fl?'flag':''}" ${fl?'title="Flagged year"':''}>${CM.fmt(v,unit)}</td>`}).join('')}</tr>`).join('');
+ $('tab').innerHTML=h;
+ const miss=rows.filter(r=>!r.r||!Object.keys(r.r.byYear).length).map(r=>r.s);
+ $('foot').hidden=false;$('foot').innerHTML=(hide?'Years that failed plausibility checks are hidden. ':'Flagged years are shown in red and may be wrong. ')+'Money in ₹ crore; EPS as printed per share; ratios computed from the same basis. "–" means no value, either missing from the source or hidden.'+(miss.length?`<br><b>No data for this metric:</b> ${miss.map(CM.esc).join(', ')}.`:'');
+ history.replaceState(null,'','?c='+sel.map(encodeURIComponent).join(',')+'&m='+encodeURIComponent(metric)+'&b='+basis+'&y0='+y0+'&y1='+y1+(hide?'':'&f=1'));
+ window.__rows=rows;window.__yrs=yrs;window.__unit=unit;window.__ml=mlabel}
+$('metric').onchange=e=>{metric=e.target.value;draw()};$('basis').onchange=e=>{basis=e.target.value;draw()};$('y0').onchange=e=>{y0=+e.target.value;draw()};$('y1').onchange=e=>{y1=+e.target.value;draw()};$('hide').onchange=e=>{hide=e.target.checked;draw()};
+$('csvw').onclick=()=>{const y=window.__yrs;CM.download('compare_wide.csv',CM.toCSV([['symbol','basis',...y.map(CM.fyLabel)],...window.__rows.map(r=>[r.s,r.r&&r.r.basis||'',...y.map(v=>r.r&&r.r.byYear[v]!=null?r.r.byYear[v]:'')])]))};
+$('csvl').onclick=()=>{const y=window.__yrs,o=[['symbol','basis','fiscal_year','metric','value','unit','flagged']];window.__rows.forEach(r=>y.forEach(v=>{if(r.r&&r.r.byYear[v]!=null)o.push([r.s,r.r.basis,CM.fyLabel(v),window.__ml,r.r.byYear[v],window.__unit,r.r.flagged.has(v)?1:0])}));CM.download('compare_long.csv',CM.toCSV(o))};
+$('lnk').onclick=()=>{const u=location.href;(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>{$('lnk').textContent='Copied'},()=>prompt('Copy this link',u));setTimeout(()=>$('lnk').textContent='Copy link',1500)};
+// typeahead
+let act=-1,cur=[];const q=$('q');
+function sug(){const t=q.value.trim().toLowerCase();if(!t){$('sg').hidden=true;return}cur=IDX.filter(x=>!sel.includes(x.s)&&(x.s.toLowerCase().includes(t)||x.n.toLowerCase().includes(t))).sort((a,b)=>(a.s.toLowerCase().startsWith(t)?0:1)-(b.s.toLowerCase().startsWith(t)?0:1)||a.s.localeCompare(b.s)).slice(0,8);act=cur.length?0:-1;
+ $('sg').hidden=!cur.length;$('sg').innerHTML=cur.map((x,i)=>`<div data-i="${i}" class="${i===act?'act':''}"><span><b>${CM.esc(x.s)}</b> ${CM.esc(x.n)}</span><span class="mut small">${CM.KIND[x.k]}</span></div>`).join('');document.querySelectorAll('#sg [data-i]').forEach(e=>e.onmousedown=ev=>{ev.preventDefault();add(cur[+e.dataset.i].s)})}
+function add(s){if(sel.length>=12){alert('Up to 12 companies.');return}if(!sel.includes(s))sel.push(s);q.value='';$('sg').hidden=true;load()}
+q.oninput=sug;q.onkeydown=e=>{if(e.key==='ArrowDown'&&cur.length){act=(act+1)%cur.length;sug2()}else if(e.key==='ArrowUp'&&cur.length){act=(act-1+cur.length)%cur.length;sug2()}else if(e.key==='Enter'&&act>=0){add(cur[act].s)}else if(e.key==='Escape')$('sg').hidden=true};
+function sug2(){[...$('sg').children].forEach((c,i)=>c.classList.toggle('act',i===act))}
+q.onblur=()=>setTimeout(()=>$('sg').hidden=true,150);
+window.addEventListener('resize',()=>{if(sel.length)draw()});
+</script></body></html>
